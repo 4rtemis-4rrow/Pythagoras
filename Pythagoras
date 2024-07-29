@@ -1,0 +1,183 @@
+#!/usr/bin/env python3
+
+import numpy as np
+import matplotlib.pyplot as plt
+import sympy as sp
+
+# Initialize in-memory storage for functions
+functions = {}
+
+def evaluate_expression(expr):
+    # Replace function names with stored functions if available
+    for name, func in functions.items():
+        expr = expr.replace(name, f'({func})')
+    x = sp.Symbol('x')
+    return sp.sympify(expr)
+
+def trigonometry(func, x):
+    if func == 'sin':
+        return np.sin(x)
+    elif func == 'cos':
+        return np.cos(x)
+    elif func == 'tan':
+        return np.tan(x)
+    elif func == 'asin':
+        return np.arcsin(x)
+    elif func == 'acos':
+        return np.arccos(x)
+    elif func == 'atan':
+        return np.arctan(x)
+    else:
+        raise ValueError("Unsupported trigonometric function")
+
+def calculus(expression, operation):
+    x = sp.Symbol('x')
+    expr = sp.sympify(expression)
+    if operation == 'differentiate':
+        result = sp.diff(expr, x)
+    elif operation == 'integrate':
+        result = sp.integrate(expr, x)
+    else:
+        raise ValueError("Unsupported calculus operation")
+    return result
+
+def store_function(name, expression):
+    functions[name] = expression
+
+def evaluate_function(name, x_value):
+    if name not in functions:
+        raise ValueError("Function not found")
+    expression = functions[name]
+    x = sp.Symbol('x')
+    func = sp.lambdify(x, sp.sympify(expression), 'numpy')
+    return func(x_value)
+
+def plot_function(name, start=-10, end=10, num_points=1000):
+    if name not in functions:
+        raise ValueError("Function not found")
+    expression = functions[name]
+    x = sp.Symbol('x')
+    func = sp.lambdify(x, sp.sympify(expression), 'numpy')
+    x_vals = np.linspace(start, end, num_points)
+    y_vals = func(x_vals)
+    
+    plt.switch_backend('TkAgg')  # Use TkAgg backend to avoid Qt issues
+    plt.plot(x_vals, y_vals)
+    plt.title(f'Plot of {name}')
+    plt.xlabel('x')
+    plt.ylabel('f(x)')
+    plt.grid(True)
+    plt.show()
+
+def format_expression(expr):
+    """Format the expression with ^ for power and add parentheses where needed."""
+    expr = str(expr)
+    expr = expr.replace('**', '^')
+    return expr
+
+def parse_input(input_str):
+    try:
+        # Handle basic arithmetic and trigonometric functions
+        result = eval(input_str, {"__builtins__": None}, {"x": 1, "sin": np.sin, "cos": np.cos, "tan": np.tan})
+        return result
+    except Exception:
+        # If eval fails, use sympy to handle more complex expressions
+        expression = evaluate_expression(input_str)
+        return expression
+
+def calculus_on_expression(expression, operation):
+    return calculus(expression, operation)
+
+def calculus_on_stored_function(name, operation):
+    if name not in functions:
+        raise ValueError("Function not found")
+    expression = functions[name]
+    return calculus(expression, operation)
+
+def main():
+    global functions
+    print("Advanced Calculator")
+    print("Enter your expressions or functions. Type 'exit' to quit.")
+    print("For calculus operations, use 'diff <expression>' or 'int <expression>'.")
+    print("To evaluate a stored function, use '<function_name>(<x_value>)'.")
+    print("To plot a stored function, use 'plot <function_name>'.")
+    print("For calculus on a stored function, use 'diff <function_name>' or 'int <function_name>'.")
+
+    while True:
+        user_input = input("\n> ").strip()
+
+        if user_input.lower() == 'exit':
+            break
+
+        if '=' in user_input:
+            # Define or update a function
+            try:
+                name, expr = user_input.split('=', 1)
+                name = name.strip()
+                expr = expr.strip()
+                store_function(name, expr)
+                print(f"Function '{name}' stored.")
+            except Exception as e:
+                print(f"Error storing function: {e}")
+
+        elif user_input.startswith('plot '):
+            # Plot a stored function
+            try:
+                _, name = user_input.split(' ', 1)
+                plot_function(name)
+            except Exception as e:
+                print(f"Error plotting function: {e}")
+
+        elif user_input.startswith('diff '):
+            # Differentiate an expression or stored function
+            try:
+                _, expr = user_input.split(' ', 1)
+                if expr in functions:
+                    result = calculus_on_stored_function(expr, 'differentiate')
+                else:
+                    result = calculus_on_expression(expr, 'differentiate')
+                formatted_result = format_expression(result)
+                print(f"Derivative: {formatted_result}")
+            except Exception as e:
+                print(f"Error differentiating expression: {e}")
+
+        elif user_input.startswith('int '):
+            # Integrate an expression or stored function
+            try:
+                _, expr = user_input.split(' ', 1)
+                if expr in functions:
+                    result = calculus_on_stored_function(expr, 'integrate')
+                else:
+                    result = calculus_on_expression(expr, 'integrate')
+                formatted_result = format_expression(result)
+                print(f"Integral: {formatted_result}")
+            except Exception as e:
+                print(f"Error integrating expression: {e}")
+
+        elif '(' in user_input and ')' in user_input:
+            # Evaluate a stored function with a value
+            try:
+                name, value = user_input.split('(', 1)
+                value = value.rstrip(')')
+                name = name.strip()
+                value = float(value.strip())
+                result = evaluate_function(name, value)
+                print(f"Result of {name}({value}): {result}")
+            except Exception as e:
+                print(f"Error evaluating function: {e}")
+
+        else:
+            # Evaluate or parse the expression
+            try:
+                result = parse_input(user_input)
+                if isinstance(result, sp.Basic):
+                    formatted_result = format_expression(result)
+                    print(f"Result: {formatted_result}")
+                else:
+                    print(f"Result: {result}")
+            except Exception as e:
+                print(f"Error: {e}")
+
+if __name__ == '__main__':
+    main()
+
