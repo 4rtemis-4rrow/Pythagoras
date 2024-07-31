@@ -4,15 +4,24 @@ import numpy as np
 import matplotlib.pyplot as plt
 import sympy as sp
 
-# Initialize in-memory storage for functions
+# Initialize in-memory storage for functions and variables
 functions = {}
+variables = {}
 
 def evaluate_expression(expr):
     # Replace function names with stored functions if available
     for name, func in functions.items():
         expr = expr.replace(name, f'({func})')
+
     x = sp.Symbol('x')
-    return sp.sympify(expr)
+    expr = sp.sympify(expr)
+
+    # Substitute variables values into the expression
+    for var, value in variables.items():
+        if value is not None:
+            expr = expr.subs(sp.Symbol(var), value)
+    
+    return expr
 
 def trigonometry(func, x):
     if func == 'sin':
@@ -71,19 +80,27 @@ def plot_function(name, start=-10, end=10, num_points=1000):
 
 def format_expression(expr):
     """Format the expression with ^ for power and add parentheses where needed."""
-    expr = str(expr)
-    expr = expr.replace('**', '^')
-    return expr
+    expr_str = str(expr)
+    expr_str = expr_str.replace('**', '^')
+    return expr_str
 
 def parse_input(input_str):
+    # Check if the input starts with a function name
+    if input_str.isupper() and input_str.isalpha():
+        if input_str in functions:
+            # Evaluate the function with the current value of x
+            return evaluate_function(input_str, x_value)
+        else:
+            raise ValueError("Function not found")
+
+    # Handle basic arithmetic and trigonometric functions using sympy
     try:
-        # Handle basic arithmetic and trigonometric functions
-        result = eval(input_str, {"__builtins__": None}, {"x": 1, "sin": np.sin, "cos": np.cos, "tan": np.tan})
-        return result
-    except Exception:
-        # If eval fails, use sympy to handle more complex expressions
-        expression = evaluate_expression(input_str)
-        return expression
+        # Convert the input string into a sympy expression
+        expression = sp.sympify(input_str)
+        return evaluate_expression(expression)
+    except Exception as e:
+        print(f"Error parsing input: {e}")
+        return None
 
 def calculus_on_expression(expression, operation):
     return calculus(expression, operation)
@@ -95,13 +112,15 @@ def calculus_on_stored_function(name, operation):
     return calculus(expression, operation)
 
 def main():
-    global functions
+    global functions, variables
     print("Advanced Calculator")
     print("Enter your expressions or functions. Type 'exit' to quit.")
     print("For calculus operations, use 'diff <expression>' or 'int <expression>'.")
     print("To evaluate a stored function, use '<function_name>(<x_value>)'.")
     print("To plot a stored function, use 'plot <function_name>'.")
     print("For calculus on a stored function, use 'diff <function_name>' or 'int <function_name>'.")
+    print("To set the value of a variable, use '<variable> = <value>'.")
+    print("To clear a variable, use 'clear <variable>'.")
 
     while True:
         user_input = input("\n> ").strip()
@@ -110,15 +129,41 @@ def main():
             break
 
         if '=' in user_input:
-            # Define or update a function
-            try:
-                name, expr = user_input.split('=', 1)
-                name = name.strip()
-                expr = expr.strip()
-                store_function(name, expr)
-                print(f"Function '{name}' stored.")
-            except Exception as e:
-                print(f"Error storing function: {e}")
+            if user_input.startswith('clear '):
+                # Clear a variable
+                try:
+                    _, var = user_input.split(' ', 1)
+                    var = var.strip()
+                    if var in variables:
+                        variables[var] = None
+                        print(f"Variable '{var}' cleared.")
+                    else:
+                        print(f"Variable '{var}' does not exist.")
+                except Exception as e:
+                    print(f"Error clearing variable: {e}")
+            elif user_input[0].isupper():
+                # Define or update a function
+                try:
+                    name, expr = user_input.split('=', 1)
+                    name = name.strip()
+                    expr = expr.strip()
+                    store_function(name, expr)
+                    print(f"Function '{name}' stored.")
+                except Exception as e:
+                    print(f"Error storing function: {e}")
+            else:
+                # Define or update a variable
+                try:
+                    var, value = user_input.split('=', 1)
+                    var = var.strip()
+                    value = value.strip()
+                    if var.islower() and var.isalpha():
+                        variables[var] = float(value) if value else None
+                        print(f"Variable '{var}' set to {variables[var]}.")
+                    else:
+                        print("Variable names must be lowercase.")
+                except Exception as e:
+                    print(f"Error storing variable: {e}")
 
         elif user_input.startswith('plot '):
             # Plot a stored function
@@ -180,4 +225,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
