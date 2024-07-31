@@ -30,13 +30,15 @@ advanced calculator in python
 
   store a function
 
-    `f = 32*sin(x)` (note that a function is always going to take x as an argument)
+    `F = 32*sin(x)` (note that a function is always going to take x as an argument)
 
-    `f(3)` will output the value of `32*sin(3)`
+    `F(3)` will output the value of `32*sin(3)`
+
+    note: a function's letter is always uppercase, lowercase letters are reserved for variables
 
   plot a function
 
-    `plot f`
+    `plot F`
 
   calculus
 
@@ -44,11 +46,11 @@ advanced calculator in python
 
     `diff sin(x)`
 
-    `diff f`
+    `diff F`
 
     `int sin(x)`
 
-    `int f`
+    `int F`
 
   note: at the moment, you can't request the value of an integral or a derivative fron the `int`/`diff` functions directly, so you'd have to copy the result and store in in a function, and then request it's value
 
